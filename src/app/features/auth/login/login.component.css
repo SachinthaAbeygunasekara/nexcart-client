@@ -1,0 +1,27 @@
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+:host {
+  display: block;
+}
+
+::ng-deep input:focus {
+  box-shadow: 0 0 12px rgba(13, 110, 253, 0.3);
+}
