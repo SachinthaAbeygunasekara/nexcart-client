@@ -1,0 +1,21 @@
+/* Navbar styling */
+nav {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Search input focus */
+input:focus {
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+}
+
+/* Responsive navbar */
+@media (max-width: 768px) {
+  nav {
+    padding: 0.5rem 1rem;
+  }
+
+  .flex-1 {
+    display: none;
+  }
+}
+
