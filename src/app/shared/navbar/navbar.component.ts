@@ -13,6 +13,7 @@ import { FormsModule } from '@angular/forms';
 export class NavbarComponent {
   @Input() cartCount: number = 0;
   @Input() isLoggedIn: boolean = false;
+  @Input() isAdmin: boolean = false;
   @Input() username: string | null = null;
   @Input() searchQuery: string = '';
 

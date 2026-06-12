@@ -1,0 +1,65 @@
+<app-navbar
+  [cartCount]="cartCount"
+  [isLoggedIn]="isLoggedIn"
+  [username]="username"
+  (onLogout)="onLogout()">
+</app-navbar>
+
+<div class="max-w-7xl mx-auto px-4 py-12">
+  @if (loading) {
+    <div class="flex justify-center items-center h-64">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+    </div>
+  } @else if (product) {
+    <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+      <div class="md:flex">
+        <!-- Product Image -->
+        <div class="md:w-1/2 bg-gray-100">
+          <img [src]="product.imageUrl" [alt]="product.name" class="w-full h-full object-cover">
+        </div>
+
+        <!-- Product Details -->
+        <div class="md:w-1/2 p-8 md:p-12">
+          <div class="mb-6">
+            <span class="px-3 py-1 bg-blue-100 text-blue-600 rounded-full text-sm font-semibold mb-4 inline-block">
+              {{ product.category }}
+            </span>
+            <h1 class="text-4xl font-bold text-gray-900 mb-4">{{ product.name }}</h1>
+            <p class="text-2xl font-bold text-blue-600 mb-6">Rs. {{ product.price.toLocaleString() }}</p>
+            <p class="text-gray-600 leading-relaxed mb-8 text-lg">
+              {{ product.description }}
+            </p>
+          </div>
+
+          <div class="space-y-6">
+            <div class="flex items-center gap-4">
+              <span class="font-semibold text-gray-700">Availability:</span>
+              <span [ngClass]="product.quantity > 0 ? 'text-green-600' : 'text-red-600'" class="font-bold">
+                {{ product.quantity > 0 ? (product.quantity + ' in stock') : 'Out of Stock' }}
+              </span>
+            </div>
+
+            <div class="flex gap-4">
+              <button
+                (click)="addToCart()"
+                [disabled]="product.quantity === 0"
+                class="flex-1 bg-blue-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg disabled:bg-gray-300 disabled:cursor-not-allowed">
+                Add to Cart
+              </button>
+              <button
+                routerLink="/home"
+                class="px-8 py-4 border-2 border-gray-200 text-gray-600 rounded-xl font-bold hover:bg-gray-50 transition">
+                Back
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  } @else {
+    <div class="text-center py-20">
+      <h2 class="text-2xl text-gray-600 mb-4">Product not found</h2>
+      <button routerLink="/home" class="text-blue-500 font-semibold hover:underline">Return to Home</button>
+    </div>
+  }
+</div>

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
@@ -6,6 +6,7 @@ import { ProductService } from '../products/services/product.service';
 import { CartService } from '../../core/services/cart.service';
 import { AuthService } from '../auth/services/auth.service';
 import { Product } from '../../core/models/product.model';
+import { ProductListComponent } from '../products/product-list/product-list.component';
 import { CartItem } from '../../core/models/cart.model';
 import { LoginComponent } from '../auth/login/login.component';
 import { RegisterComponent } from '../auth/register/register.component';
@@ -21,6 +22,7 @@ import Swal from 'sweetalert2';
     CommonModule,
     FormsModule,
     RouterModule,
+    ProductListComponent,
     LoginComponent,
     RegisterComponent,
     NavbarComponent,
@@ -37,6 +39,7 @@ export class HomeComponent implements OnInit {
   searchQuery: string = '';
   selectedCategory: string = 'all';
   isLoggedIn: boolean = false;
+  isAdmin: boolean = false;
   username: string | null = null;
 
   showLoginModal: boolean = false;
@@ -51,6 +54,7 @@ export class HomeComponent implements OnInit {
     private authService: AuthService,
     private router: Router,
     private route: ActivatedRoute,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -79,13 +83,16 @@ export class HomeComponent implements OnInit {
 
   loadProducts(): void {
     this.productService.getProducts().subscribe((products) => {
-      this.products = products;
-      this.filteredProducts = products;
+      // Only show ACTIVE products on the home page
+      this.products = products.filter(p => p.status === 'ACTIVE');
+      this.filteredProducts = [...this.products];
+      this.cdr.detectChanges();
     });
   }
 
   checkLoginStatus(): void {
     this.isLoggedIn = this.authService.isLoggedIn();
+    this.isAdmin = this.authService.isAdmin();
     this.username = this.authService.getUsername();
   }
 
@@ -145,26 +152,39 @@ export class HomeComponent implements OnInit {
     this.showLoginModal = true;
   }
 
-  filterByCategory(category: string): void {
-    this.selectedCategory = category;
-    if (category === 'all') {
-      this.filteredProducts = this.products;
-    } else {
-      this.filteredProducts = this.products.filter((p) => p.category === category);
-    }
-  }
+   filterByCategory(category: string): void {
+     this.selectedCategory = category;
+     this.applyFilters();
+   }
 
-  searchProducts(): void {
-    if (this.searchQuery.trim() === '') {
-      this.filteredProducts = this.products;
-    } else {
-      this.filteredProducts = this.products.filter(
-        (p) =>
-          p.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-          p.description.toLowerCase().includes(this.searchQuery.toLowerCase()),
-      );
-    }
-  }
+   onSearchFromNavbar(query: string): void {
+     this.searchQuery = query;
+     this.applyFilters();
+   }
+
+   searchProducts(): void {
+     this.applyFilters();
+   }
+
+   private applyFilters(): void {
+     let results = this.products;
+
+     // Apply category filter
+     if (this.selectedCategory !== 'all') {
+       results = results.filter((p) => p.category === this.selectedCategory);
+     }
+
+     // Apply search filter
+     if (this.searchQuery.trim() !== '') {
+       results = results.filter(
+         (p) =>
+           p.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+           p.description.toLowerCase().includes(this.searchQuery.toLowerCase()),
+       );
+     }
+
+     this.filteredProducts = results;
+   }
 
   addToCart(product: Product): void {
     this.cartService.addToCart(product, 1);

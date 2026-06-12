@@ -3,11 +3,8 @@ export interface Product {
   name: string;
   description: string;
   price: number;
-  originalPrice?: number;
-  image: string;
+  imageUrl: string;
   category: string;
-  rating: number;
-  stock: number;
-  discount?: number;
+  quantity: number;
+  status: 'ACTIVE' | 'INACTIVE';
 }
-
