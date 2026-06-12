@@ -5,10 +5,12 @@ import { authGuard } from './core/guards/auth-guard';
 import { HomeComponent } from './features/home/home.component';
 import { adminGuard } from './core/guards/admin-guard';
 import { AdminDashboardComponent } from './features/admin-dashboard/admin-dashboard.component';
+import { ProductDetailComponent } from './features/products/product-detail/product-detail.component';
 import { AccessDeniedComponent } from './features/access-denied/access-denied.component';
 
 export const routes: Routes = [
   { path: 'home', component: HomeComponent },
+  { path: 'products/:id', component: ProductDetailComponent },
   { path: 'admin', component: AdminDashboardComponent, canActivate: [adminGuard] },
   { path: 'access-denied', component: AccessDeniedComponent },
   { path: '', redirectTo: 'home', pathMatch: 'full' },

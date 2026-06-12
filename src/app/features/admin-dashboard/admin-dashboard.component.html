@@ -1,1 +1,91 @@
-<p>admin-dashboard works!</p>
+<div class="min-h-screen bg-gray-100 p-8">
+  <div class="max-w-6xl mx-auto">
+    <div class="flex justify-between items-center mb-8">
+      <div>
+        <h2 class="text-3xl font-bold text-gray-800">Admin Dashboard</h2>
+        <p class="text-gray-600">Manage your product catalog</p>
+      </div>
+      <div class="flex gap-4">
+        <a routerLink="/home" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition">
+          Back to Home
+        </a>
+        <button (click)="openAddModal()" class="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition shadow-md">
+          + Add Product
+        </button>
+      </div>
+    </div>
+
+    <!-- Product Table -->
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+      <table class="w-full text-left">
+        <thead class="bg-gray-50 border-b border-gray-100">
+          <tr>
+            <th class="px-6 py-4 font-semibold text-gray-700">Product</th>
+            <th class="px-6 py-4 font-semibold text-gray-700">Category</th>
+            <th class="px-6 py-4 font-semibold text-gray-700">Price</th>
+            <th class="px-6 py-4 font-semibold text-gray-700">Stock</th>
+            <th class="px-6 py-4 font-semibold text-gray-700">Status</th>
+            <th class="px-6 py-4 font-semibold text-gray-700 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          @for (product of products; track product.id) {
+            <tr class="hover:bg-gray-50 transition">
+              <td class="px-6 py-4">
+                <div class="flex items-center gap-4">
+                  <img [src]="product.imageUrl" class="w-12 h-12 rounded-lg object-cover bg-gray-100">
+                  <div>
+                    <div class="font-bold text-gray-900">{{ product.name }}</div>
+                    <div class="text-xs text-gray-500 truncate max-w-[200px]">{{ product.description }}</div>
+                  </div>
+                </div>
+              </td>
+              <td class="px-6 py-4">
+                <span class="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-semibold">
+                  {{ product.category }}
+                </span>
+              </td>
+              <td class="px-6 py-4 font-semibold text-gray-900">
+                Rs. {{ product.price.toLocaleString() }}
+              </td>
+              <td class="px-6 py-4">
+                <span [class]="product.quantity > 0 ? 'text-green-600' : 'text-red-600'" class="font-medium">
+                  {{ product.quantity }}
+                </span>
+              </td>
+              <td class="px-6 py-4">
+                <span [class]="product.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'" class="px-2 py-1 rounded text-xs font-bold">
+                  {{ product.status }}
+                </span>
+              </td>
+              <td class="px-6 py-4 text-right">
+                <div class="flex justify-end gap-2">
+                  <button (click)="openEditModal(product)" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition">
+                    ✏️
+                  </button>
+                  <button (click)="deleteProduct(product.id)" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition">
+                    🗑️
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      @if (products.length === 0) {
+        <div class="text-center py-12 text-gray-500">
+          No products found. Start by adding one!
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<app-product-form
+  [product]="currentProduct"
+  [isEditing]="isEditing"
+  [showModal]="showModal"
+  (save)="saveProduct($event)"
+  (cancel)="closeModal()">
+</app-product-form>
