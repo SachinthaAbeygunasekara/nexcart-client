@@ -2,13 +2,14 @@
 <app-navbar
   [cartCount]="cartCount"
   [isLoggedIn]="isLoggedIn"
+  [isAdmin]="isAdmin"
   [username]="username"
   [searchQuery]="searchQuery"
   (onLoginClick)="openLoginModal()"
   (onRegisterClick)="openRegisterModal()"
   (onCartClick)="openCartModal()"
   (onLogout)="logout()"
-  (onSearch)="searchProducts()">
+  (onSearch)="onSearchFromNavbar($event)">
 </app-navbar>
 
 <!-- Main Content -->
@@ -16,6 +17,37 @@
   <!-- Promotional Banner -->
   <div class="bg-gradient-to-r from-blue-400 to-blue-400 text-center py-4 text-sm font-semibold text-gray-800">
     🎉 Welcome to NexCart! Browse our amazing products. Add to cart - Login to checkout!
+  </div>
+
+  <!-- Category Filter -->
+  <div class="max-w-7xl mx-auto px-4 py-6">
+    <div class="flex gap-4 overflow-x-auto pb-4">
+      @for (category of categories; track category) {
+        <button
+          (click)="filterByCategory(category)"
+          [ngClass]="{
+          'bg-blue-500 text-white': selectedCategory === category,
+          'bg-white text-gray-800 border border-gray-300': selectedCategory !== category
+        }"
+          class="px-6 py-2 rounded-lg font-semibold whitespace-nowrap hover:bg-blue-500 hover:text-white transition">
+          {{ category | titlecase }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Products Grid -->
+  <div class="max-w-7xl mx-auto px-4 pb-12">
+    @if (filteredProducts.length === 0) {
+      <div class="text-center py-12">
+        <p class="text-xl text-gray-600">No products found. Try another search!</p>
+      </div>
+    }
+
+    <app-product-list
+      [products]="filteredProducts"
+      (addToCart)="addToCart($event)">
+    </app-product-list>
   </div>
 </div>
 
@@ -79,7 +111,7 @@
               <div class="border rounded-lg p-4 flex gap-4">
                 <!-- Product Image -->
                 <img
-                  [src]="item.product.image"
+                  [src]="item.product.imageUrl"
                   [alt]="item.product.name"
                   class="w-20 h-20 object-cover rounded">
 

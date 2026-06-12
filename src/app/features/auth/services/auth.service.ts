@@ -8,7 +8,7 @@ import { jwtDecode } from 'jwt-decode';
   providedIn: 'root',
 })
 export class AuthService {
-  private apiUrl = `${environment.apiUrl}/auth`;
+  private readonly apiUrl = `${environment.apiUrl}/auth`;
 
   constructor(private readonly http: HttpClient) {}
 
