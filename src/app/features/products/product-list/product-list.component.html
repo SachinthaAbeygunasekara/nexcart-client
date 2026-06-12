@@ -1,0 +1,55 @@
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+  @for (product of products; track product.id) {
+    <div
+      class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition transform hover:scale-105">
+      <!-- Product Image -->
+      <div class="relative overflow-hidden bg-gray-200 h-48 cursor-pointer" [routerLink]="['/products', product.id]">
+        <img
+          [src]="product.imageUrl"
+          [alt]="product.name"
+          class="w-full h-full object-cover">
+      </div>
+
+      <!-- Product Info -->
+      <div class="p-4">
+        <p class="text-xs text-gray-500 mb-2">{{ product.category }}</p>
+        <h3 class="font-semibold text-gray-900 mb-2 line-clamp-2 cursor-pointer hover:text-blue-500" [routerLink]="['/products', product.id]">
+          {{ product.name }}
+        </h3>
+        <p class="text-sm text-gray-600 mb-3 line-clamp-2">{{ product.description }}</p>
+
+        <!-- Price -->
+        <div class="mb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-lg font-bold text-blue-500">Rs. {{ (product.price).toLocaleString() }}</span>
+          </div>
+        </div>
+
+        <!-- Stock Status -->
+        <div class="mb-4">
+        <span
+          [ngClass]="{
+            'text-green-600': product.quantity > 10,
+            'text-blue-600': product.quantity > 0 && product.quantity <= 10,
+            'text-red-600': product.quantity === 0
+          }"
+          class="text-sm font-semibold">
+          {{ product.quantity > 0 ? (product.quantity + ' in stock') : 'Out of Stock' }}
+        </span>
+        </div>
+
+        <!-- Add to Cart Button -->
+        <button
+          (click)="onAddToCart(product)"
+          [disabled]="product.quantity === 0"
+          [ngClass]="{
+          'bg-gray-300 cursor-not-allowed': product.quantity === 0,
+          'bg-blue-500 hover:bg-blue-600': product.quantity > 0
+        }"
+          class="w-full text-white font-semibold py-2 px-4 rounded-lg transition">
+          {{ product.quantity > 0 ? 'Add to Cart' : 'Out of Stock' }}
+        </button>
+      </div>
+    </div>
+  }
+</div>
