@@ -6,9 +6,10 @@ import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-register',
+  standalone: true,
   imports: [FormsModule, RouterModule, CommonModule],
   templateUrl: './register.component.html',
-  styleUrl: './register.component.css',
+  styleUrls: ['./register.component.css'],
 })
 export class RegisterComponent {
   @Output() onRegisterSuccess = new EventEmitter<void>();
