@@ -1,55 +1,51 @@
-import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
+
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ProductService } from '../products/services/product.service';
 import { CartService } from '../../core/services/cart.service';
 import { AuthService } from '../auth/services/auth.service';
+import { CategoryService } from '../../core/services/category.service';
 import { Product } from '../../core/models/product.model';
+import { Category } from '../../core/models/category.model';
 import { ProductListComponent } from '../products/product-list/product-list.component';
-import { CartItem } from '../../core/models/cart.model';
+import { CartItem } from '../../core/models/cart_item.model';
 import { LoginComponent } from '../auth/login/login.component';
 import { RegisterComponent } from '../auth/register/register.component';
 import { NavbarComponent } from '../../shared/navbar/navbar.component';
 
-import { SweetAlert2Module } from '@sweetalert2/ngx-sweetalert2';
 import Swal from 'sweetalert2';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    RouterModule,
-    ProductListComponent,
-    LoginComponent,
-    RegisterComponent,
-    NavbarComponent,
-    SweetAlert2Module,
-  ],
+  imports: [CommonModule, FormsModule, RouterModule, ProductListComponent, NavbarComponent, LoginComponent, RegisterComponent],
   templateUrl: './home.component.html',
-  styleUrl: './home.component.css',
+  styleUrls: ['./home.component.css'],
 })
 export class HomeComponent implements OnInit {
   products: Product[] = [];
   filteredProducts: Product[] = [];
-  cart: CartItem[] = [];
-  cartCount: number = 0;
+  categories: Category[] = [];
+  selectedCategoryId: number | null = null;
   searchQuery: string = '';
-  selectedCategory: string = 'all';
-  isLoggedIn: boolean = false;
-  isAdmin: boolean = false;
+
+  showLoginModal = false;
+  showRegisterModal = false;
+  showCartModal = false;
+
+  cartItems: CartItem[] = [];
+  cartTotal = 0;
+  cartCount = 0;
+
+  isLoggedIn = false;
+  isAdmin = false;
   username: string | null = null;
-
-  showLoginModal: boolean = false;
-  showRegisterModal: boolean = false;
-  showCartModal: boolean = false;
-
-  categories = ['all', 'Electronics', 'Accessories', 'Fashion', 'Home & Living'];
 
   constructor(
     private productService: ProductService,
+    private categoryService: CategoryService,
     private cartService: CartService,
     private authService: AuthService,
     private router: Router,
@@ -58,22 +54,20 @@ export class HomeComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // load categories and products immediately on init; order doesn't strictly matter because
+    // loadProducts() will derive categories from products if the categories endpoint is empty.
+    this.loadCategories();
     this.loadProducts();
     this.checkLoginStatus();
-    this.cartService.getCart().subscribe((cart) => {
-      this.cart = cart;
-      this.cartCount = this.cartService.getCartCount();
-    });
+    this.loadCart();
 
-    this.route.queryParams.subscribe(params => {
-      if (params['auth'] === 'login') {
+    // react to query params (open login/register modal)
+    this.route.queryParams.subscribe((qp) => {
+      const auth = qp['auth'];
+      if (auth === 'login') {
         this.showLoginModal = true;
-        this.showRegisterModal = false;
-        this.showCartModal = false;
-      } else if (params['auth'] === 'register') {
+      } else if (auth === 'register') {
         this.showRegisterModal = true;
-        this.showLoginModal = false;
-        this.showCartModal = false;
       } else {
         this.showLoginModal = false;
         this.showRegisterModal = false;
@@ -81,12 +75,116 @@ export class HomeComponent implements OnInit {
     });
   }
 
+  loadCategories(): void {
+    this.categoryService.getCategories().subscribe({
+      next: (categories) => {
+        this.categories = categories || [];
+
+        // After categories load, ensure product category names are populated
+        if (this.products && this.products.length > 0) {
+          this.populateProductCategoryNames();
+        }
+
+        // If products already loaded, update product.category names when possible
+        if (this.products && this.products.length > 0 && this.categories.length > 0) {
+          this.products.forEach((p) => {
+            const cat = (p as any).category;
+            if (cat && (cat.name == null || String(cat.name).trim() === '') && cat.id != null) {
+              const found = this.categories.find((c) => c.id === Number(cat.id));
+              if (found && p.category) {
+                (p.category as any).name = found.name;
+              }
+            }
+          });
+          // re-run filters so UI updates immediately when categories arrive
+          this.applyFilters();
+          // ensure Angular runs change detection so standalone child components update
+          try {
+            this.cdr.detectChanges();
+          } catch (err) {
+            // detectChanges can occasionally throw if called at certain lifecycle moments; ignore
+            console.warn('[Home] detectChanges failed after categories update', err);
+          }
+        }
+      },
+      error: (err) => {
+        console.error('[Home] Error loading categories:', err);
+      },
+    });
+  }
+
   loadProducts(): void {
     this.productService.getProducts().subscribe((products) => {
-      // Only show ACTIVE products on the home page
-      this.products = products.filter(p => p.status === 'ACTIVE');
-      this.filteredProducts = [...this.products];
-      this.cdr.detectChanges();
+      this.products = (products || []).filter((p) => p.status === 'ACTIVE');
+
+      // Normalize categories on products and derive categories if needed
+      this.products.forEach((p) => {
+        const cat = (p as any).category;
+        if (cat == null) {
+          if ((p as any).categoryId != null) {
+            p.category = { id: Number((p as any).categoryId), name: '' } as any;
+          } else if ((p as any).categoryName) {
+            p.category = { id: 0, name: String((p as any).categoryName) } as any;
+          } else {
+            p.category = undefined as any;
+          }
+        } else if (typeof cat === 'string') {
+          p.category = { id: 0, name: cat } as any;
+        } else if (typeof cat === 'number') {
+          p.category = { id: cat, name: '' } as any;
+        } else if (typeof cat === 'object') {
+          if ((!cat.name || String(cat.name).trim() === '') && cat.id != null && this.categories.length > 0) {
+            const found = this.categories.find((c) => c.id === cat.id);
+                if (found && p.category) {
+                  (p.category as any).name = found.name;
+                }
+          }
+        }
+      });
+
+      if ((!this.categories || this.categories.length === 0) && this.products.length > 0) {
+        const map = new Map<number, Category>();
+        this.products.forEach((p) => {
+          const c = p.category as any;
+          if (c && c.id != null) {
+            map.set(Number(c.id), { id: Number(c.id), name: c.name || '' });
+          } else if (c && c.name) {
+            const existing = Array.from(map.values()).find((x) => x.name === c.name);
+            if (!existing) {
+              const syntheticId = -(map.size + 1);
+              map.set(syntheticId, { id: syntheticId, name: c.name });
+            }
+          }
+        });
+        this.categories = Array.from(map.values());
+      }
+
+      // After deriving categories, populate product category names if still empty
+      this.populateProductCategoryNames();
+
+      this.applyFilters();
+      // ensure UI refresh after products load and potential category derivation
+      try {
+        this.cdr.detectChanges();
+      } catch (err) {
+        console.warn('[Home] detectChanges failed after products load', err);
+      }
+    });
+  }
+
+  private populateProductCategoryNames(): void {
+    if (this.categories.length === 0) {
+      return;
+    }
+
+    this.products.forEach((p) => {
+      const cat = p.category as any;
+      if (cat && cat.id != null && (!cat.name || String(cat.name).trim() === '')) {
+        const found = this.categories.find((c) => c.id === cat.id);
+        if (found) {
+          cat.name = found.name;
+        }
+      }
     });
   }
 
@@ -128,12 +226,13 @@ export class HomeComponent implements OnInit {
       relativeTo: this.route,
       queryParams: { auth: value },
       queryParamsHandling: 'merge',
-      replaceUrl: true
+      replaceUrl: true,
     });
   }
 
   onLoginSuccess(): void {
     this.checkLoginStatus();
+    this.loadCart();
     this.closeModals();
   }
 
@@ -152,51 +251,86 @@ export class HomeComponent implements OnInit {
     this.showLoginModal = true;
   }
 
-   filterByCategory(category: string): void {
-     this.selectedCategory = category;
-     this.applyFilters();
-   }
+  filterByCategory(categoryId: number | null): void {
+    this.selectedCategoryId = categoryId;
+    this.applyFilters();
+  }
 
-   onSearchFromNavbar(query: string): void {
-     this.searchQuery = query;
-     this.applyFilters();
-   }
+  onSearchFromNavbar(query: string): void {
+    this.searchQuery = query;
+    this.applyFilters();
+  }
 
-   searchProducts(): void {
-     this.applyFilters();
-   }
+  searchProducts(): void {
+    this.applyFilters();
+  }
 
-   private applyFilters(): void {
-     let results = this.products;
+  private applyFilters(): void {
+    let results = this.products.slice();
 
-     // Apply category filter
-     if (this.selectedCategory !== 'all') {
-       results = results.filter((p) => p.category === this.selectedCategory);
-     }
+    if (this.selectedCategoryId !== null) {
+      results = results.filter((p) => {
+        const categoryId = typeof p.category?.id === 'string' ? parseInt(p.category.id, 10) : p.category?.id;
+        return categoryId === this.selectedCategoryId;
+      });
+    }
 
-     // Apply search filter
-     if (this.searchQuery.trim() !== '') {
-       results = results.filter(
-         (p) =>
-           p.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
-           p.description.toLowerCase().includes(this.searchQuery.toLowerCase()),
-       );
-     }
+    if (this.searchQuery.trim() !== '') {
+      const q = this.searchQuery.toLowerCase();
+      results = results.filter((p) => p.name.toLowerCase().includes(q) || p.description.toLowerCase().includes(q));
+    }
 
-     this.filteredProducts = results;
-   }
+    this.filteredProducts = results;
+  }
 
   addToCart(product: Product): void {
-    this.cartService.addToCart(product, 1);
-    Swal.fire({
-      title: 'Added!',
-      text: `${product.name} added to cart!`,
-      icon: 'success',
-      timer: 2000,
-      showConfirmButton: false,
-      toast: true,
-      position: 'top-end'
+    this.cartService.addToCart(product.id, 1).subscribe({
+      next: () => {
+        this.loadCart();
+
+        Swal.fire({
+          title: 'Added!',
+          text: `${product.name} added to cart`,
+          icon: 'success',
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      },
     });
+  }
+
+  // New: handle add-to-cart clicks from product list. Check if user is admin first,
+  // then if not logged in, prompt them to login. Otherwise proceed to add the product to cart.
+  handleAddToCart(product: Product): void {
+    if (this.isAdmin) {
+      Swal.fire({
+        title: 'Admin Restriction',
+        text: 'Admins cannot purchase products. Only customers can add items to cart.',
+        icon: 'warning',
+        confirmButtonText: 'OK',
+      });
+      return;
+    }
+
+    if (!this.isLoggedIn) {
+      Swal.fire({
+        title: 'Please Login',
+        text: 'You must be logged in to add items to your cart.',
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonText: 'Login',
+        cancelButtonText: 'Cancel',
+      }).then((result) => {
+        if (result.isConfirmed) {
+          this.openLoginModal();
+          // Trigger change detection to ensure the login modal appears immediately
+          this.cdr.detectChanges();
+        }
+      });
+      return;
+    }
+
+    this.addToCart(product);
   }
 
   attemptCheckout(): void {
@@ -205,7 +339,7 @@ export class HomeComponent implements OnInit {
         title: 'Authentication Required',
         text: 'Please login to checkout',
         icon: 'info',
-        confirmButtonText: 'Go to Login'
+        confirmButtonText: 'Go to Login',
       }).then((result) => {
         if (result.isConfirmed) {
           this.openLoginModal();
@@ -216,18 +350,24 @@ export class HomeComponent implements OnInit {
     Swal.fire({
       title: 'Checkout',
       text: 'Proceeding to checkout...',
-      icon: 'success'
+      icon: 'success',
     });
   }
 
-  removeFromCart(productId: number): void {
-    this.cartService.removeFromCart(productId);
+  removeFromCart(cartItemId: number): void {
+    this.cartService.removeFromCart(cartItemId).subscribe(() => {
+      this.loadCart();
+    });
   }
 
-  updateQuantity(productId: number, quantity: number): void {
-    if (quantity > 0) {
-      this.cartService.updateQuantity(productId, quantity);
+  updateQuantity(cartItemId: number, quantity: number): void {
+    if (quantity <= 0) {
+      return;
     }
+
+    this.cartService.updateQuantity(cartItemId, quantity).subscribe(() => {
+      this.loadCart();
+    });
   }
 
   logout(): void {
@@ -240,11 +380,28 @@ export class HomeComponent implements OnInit {
       timer: 1500,
       showConfirmButton: false,
       toast: true,
-      position: 'top-end'
+      position: 'top-end',
     });
   }
 
   getCartTotal(): number {
-    return this.cartService.getCartTotal();
+    return this.cartTotal;
+  }
+
+  loadCart(): void {
+    if (!this.isLoggedIn) {
+      return;
+    }
+
+    this.cartService.getCart().subscribe({
+      next: (cart) => {
+        this.cartItems = cart.items || [];
+        this.cartTotal = cart.total || 0;
+        this.cartCount = (cart.items || []).reduce((sum: number, item: any) => sum + (item.quantity || 0), 0);
+      },
+    });
   }
 }
+
+
+

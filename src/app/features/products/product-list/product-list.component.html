@@ -12,7 +12,7 @@
 
       <!-- Product Info -->
       <div class="p-4">
-        <p class="text-xs text-gray-500 mb-2">{{ product.category }}</p>
+        <p class="text-xs text-gray-500 mb-2">{{ product.category?.name || 'Uncategorized' }}</p>
         <h3 class="font-semibold text-gray-900 mb-2 line-clamp-2 cursor-pointer hover:text-blue-500" [routerLink]="['/products', product.id]">
           {{ product.name }}
         </h3>

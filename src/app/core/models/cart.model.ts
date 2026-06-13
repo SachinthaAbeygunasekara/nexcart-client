@@ -1,5 +1,7 @@
-export interface CartItem {
-  product: any;
-  quantity: number;
-}
+import { CartItem } from './cart_item.model';
 
+
+export interface Cart {
+  items: CartItem[];
+  total: number;
+}

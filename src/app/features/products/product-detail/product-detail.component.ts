@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ProductService } from '../services/product.service';
 import { Product } from '../../../core/models/product.model';
-import { CartItem } from '../../../core/models/cart.model';
 import { CartService } from '../../../core/services/cart.service';
 import { NavbarComponent } from '../../../shared/navbar/navbar.component';
 import { AuthService } from '../../auth/services/auth.service';
@@ -24,10 +23,10 @@ export class ProductDetailComponent implements OnInit {
   username: string | null = null;
 
   constructor(
-    private route: ActivatedRoute,
-    private productService: ProductService,
-    private cartService: CartService,
-    private authService: AuthService
+    private readonly route: ActivatedRoute,
+    private readonly productService: ProductService,
+    private readonly cartService: CartService,
+    private readonly authService: AuthService,
   ) {}
 
   ngOnInit(): void {
@@ -37,8 +36,10 @@ export class ProductDetailComponent implements OnInit {
     }
 
     // Subscribe to cart changes (CartService exposes getCart())
-    this.cartService.getCart().subscribe((cart: CartItem[]) => {
-      this.cartCount = cart.reduce((acc: number, item: CartItem) => acc + item.quantity, 0);
+    this.cartService.getCart().subscribe({
+      next: (cart) => {
+        this.cartCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+      },
     });
 
     // AuthService does not expose a currentUser$ observable in this project;
@@ -59,19 +60,22 @@ export class ProductDetailComponent implements OnInit {
       error: (err) => {
         console.error('Error loading product:', err);
         this.loading = false;
-      }
+      },
     });
   }
 
   addToCart(): void {
     if (this.product) {
-      this.cartService.addToCart(this.product);
-      Swal.fire({
-        title: 'Success!',
-        text: `${this.product.name} added to cart`,
-        icon: 'success',
-        timer: 1500,
-        showConfirmButton: false
+      this.cartService.addToCart(this.product.id, 1).subscribe({
+        next: () => {
+          Swal.fire({
+            title: 'Success!',
+            text: `${this.product?.name} added to cart`,
+            icon: 'success',
+            timer: 1500,
+            showConfirmButton: false,
+          });
+        },
       });
     }
   }
