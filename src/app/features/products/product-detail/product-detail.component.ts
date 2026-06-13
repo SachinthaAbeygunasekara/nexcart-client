@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { ProductService } from '../services/product.service';
@@ -27,6 +27,7 @@ export class ProductDetailComponent implements OnInit {
     private readonly productService: ProductService,
     private readonly cartService: CartService,
     private readonly authService: AuthService,
+    private readonly cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -35,10 +36,14 @@ export class ProductDetailComponent implements OnInit {
       this.loadProduct(id);
     }
 
-    // Subscribe to cart changes (CartService exposes getCart())
-    this.cartService.getCart().subscribe({
+    // Subscribe to cart changes (CartService exposes cart$ BehaviorSubject)
+    this.cartService.cart$.subscribe({
       next: (cart) => {
-        this.cartCount = cart.items.reduce((sum, item) => sum + item.quantity, 0);
+        this.cartCount = (cart?.items || []).reduce((sum, item) => sum + item.quantity, 0);
+        // ensure navbar updates immediately
+        try {
+          this.cdr.detectChanges();
+        } catch {}
       },
     });
 
@@ -75,6 +80,7 @@ export class ProductDetailComponent implements OnInit {
             timer: 1500,
             showConfirmButton: false,
           });
+          // CartService will refresh the cart and emit to cart$ (subscribed above)
         },
       });
     }
