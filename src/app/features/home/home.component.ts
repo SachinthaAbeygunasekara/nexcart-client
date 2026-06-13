@@ -59,7 +59,21 @@ export class HomeComponent implements OnInit {
     this.loadCategories();
     this.loadProducts();
     this.checkLoginStatus();
-    this.loadCart();
+
+    // Subscribe to cart$ so UI updates immediately when cart changes
+    this.cartService.cart$.subscribe({
+      next: (cart) => {
+        this.cartItems = cart.items || [];
+        this.cartTotal = cart.total || 0;
+        this.cartCount = (cart.items || []).reduce((sum: number, item: any) => sum + (item.quantity || 0), 0);
+        try {
+          this.cdr.detectChanges();
+        } catch {}
+      },
+    });
+
+    // Fetch current cart from server once (will update cart$)
+    this.cartService.getCart().subscribe({});
 
     // react to query params (open login/register modal)
     this.route.queryParams.subscribe((qp) => {
@@ -347,11 +361,8 @@ export class HomeComponent implements OnInit {
       });
       return;
     }
-    Swal.fire({
-      title: 'Checkout',
-      text: 'Proceeding to checkout...',
-      icon: 'success',
-    });
+    this.closeModals();
+    this.router.navigate(['/checkout']);
   }
 
   removeFromCart(cartItemId: number): void {
@@ -389,17 +400,11 @@ export class HomeComponent implements OnInit {
   }
 
   loadCart(): void {
+    // kept for backward compatibility: trigger server fetch if needed
     if (!this.isLoggedIn) {
       return;
     }
-
-    this.cartService.getCart().subscribe({
-      next: (cart) => {
-        this.cartItems = cart.items || [];
-        this.cartTotal = cart.total || 0;
-        this.cartCount = (cart.items || []).reduce((sum: number, item: any) => sum + (item.quantity || 0), 0);
-      },
-    });
+    this.cartService.getCart().subscribe({});
   }
 }
 
