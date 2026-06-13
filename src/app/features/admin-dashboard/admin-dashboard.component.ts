@@ -48,7 +48,7 @@ export class AdminDashboardComponent implements OnInit {
       description: '',
       price: 0,
       quantity: 0,
-      category: '',
+      category: undefined,
       imageUrl: '',
       status: 'ACTIVE',
     };
@@ -74,7 +74,7 @@ export class AdminDashboardComponent implements OnInit {
   saveProduct(product: Product): void {
     if (
       !product.name ||
-      !product.category ||
+      !product.category?.id ||
       product.price <= 0
     ) {
       Swal.fire(
