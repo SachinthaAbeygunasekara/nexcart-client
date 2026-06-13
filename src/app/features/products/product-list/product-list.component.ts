@@ -8,7 +8,7 @@ import { RouterModule } from '@angular/router';
   standalone: true,
   imports: [CommonModule, RouterModule],
   templateUrl: './product-list.component.html',
-  styleUrl: './product-list.component.css',
+  styleUrls: ['./product-list.component.css'],
 })
 export class ProductListComponent {
   @Input() products: Product[] = [];
