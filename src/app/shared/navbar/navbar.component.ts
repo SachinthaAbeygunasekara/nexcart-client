@@ -1,7 +1,8 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { AuthService } from '../../features/auth/services/auth.service';
 
 @Component({
   selector: 'app-navbar',
@@ -11,6 +12,8 @@ import { FormsModule } from '@angular/forms';
   styleUrls: ['./navbar.component.css'],
 })
 export class NavbarComponent {
+  private readonly authService = inject(AuthService);
+
   @Input() cartCount: number = 0;
   @Input() isLoggedIn: boolean = false;
   @Input() isAdmin: boolean = false;
@@ -38,6 +41,10 @@ export class NavbarComponent {
   }
 
   openCart() {
+    // Prevent customers from opening cart when logged in as admin
+    if (this.isAdmin) {
+      return;
+    }
     this.onCartClick.emit();
   }
 
@@ -48,6 +55,10 @@ export class NavbarComponent {
 
   search() {
     this.onSearch.emit(this.searchQuery);
+  }
+
+  isCustomer(): boolean {
+    return this.isLoggedIn && !this.isAdmin;
   }
 }
 
