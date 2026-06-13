@@ -50,6 +50,7 @@ export class OrderService {
       params = params.set('date', filters.date);
     }
 
+    console.log(this.apiUrl);
     return this.http.get<Order[]>(`${environment.apiUrl}/admin/orders`, { params });
   }
 }
