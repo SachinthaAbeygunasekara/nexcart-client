@@ -1,86 +1,233 @@
 <div class="min-h-screen bg-gray-100 p-8">
-  <div class="max-w-6xl mx-auto">
+  <div class="max-w-7xl mx-auto">
     <div class="flex justify-between items-center mb-8">
       <div>
         <h2 class="text-3xl font-bold text-gray-800">Admin Dashboard</h2>
-        <p class="text-gray-600">Manage your product catalog</p>
+        <p class="text-gray-600">Analytics & management</p>
       </div>
       <div class="flex gap-4">
         <a routerLink="/home" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition">
           Back to Home
         </a>
-        <a routerLink="/admin/orders" class="px-6 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition shadow-md">
-          Manage Orders
-        </a>
-        <button (click)="openAddModal()" class="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition shadow-md">
-          + Add Product
-        </button>
+        @if (viewMode !== 'products') {
+          <a routerLink="/admin/orders" class="px-6 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition shadow-md">
+            Manage Orders
+          </a>
+        }
+        @if (viewMode === 'analytics') {
+          <button class="px-6 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition shadow-md" (click)="openProductManagement()">
+            Product Management
+          </button>
+        }
+        @if (viewMode === 'products') {
+          <button class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition" (click)="loadAnalytics()">
+            Back to Analytics
+          </button>
+        }
       </div>
     </div>
 
-    <!-- Product Table -->
-    <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-      <table class="w-full text-left">
-        <thead class="bg-gray-50 border-b border-gray-100">
-          <tr>
-            <th class="px-6 py-4 font-semibold text-gray-700">Product</th>
-            <th class="px-6 py-4 font-semibold text-gray-700">Category</th>
-            <th class="px-6 py-4 font-semibold text-gray-700">Price</th>
-            <th class="px-6 py-4 font-semibold text-gray-700">Stock</th>
-            <th class="px-6 py-4 font-semibold text-gray-700">Status</th>
-            <th class="px-6 py-4 font-semibold text-gray-700 text-right">Actions</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-100">
-          @for (product of products; track product.id) {
-            <tr class="hover:bg-gray-50 transition">
-              <td class="px-6 py-4">
-                <div class="flex items-center gap-4">
-                  <img [src]="product.imageUrl" class="w-12 h-12 rounded-lg object-cover bg-gray-100">
-                  <div>
-                    <div class="font-bold text-gray-900">{{ product.name }}</div>
-                    <div class="text-xs text-gray-500 truncate max-w-[200px]">{{ product.description }}</div>
-                  </div>
-                </div>
-              </td>
-               <td class="px-6 py-4">
-                 <span class="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-semibold">
-                   {{ product.category?.name || 'Uncategorized' }}
-                 </span>
-               </td>
-              <td class="px-6 py-4 font-semibold text-gray-900">
-                Rs. {{ product.price.toLocaleString() }}
-              </td>
-              <td class="px-6 py-4">
-                <span [class]="product.quantity > 0 ? 'text-green-600' : 'text-red-600'" class="font-medium">
-                  {{ product.quantity }}
-                </span>
-              </td>
-              <td class="px-6 py-4">
-                <span [class]="product.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'" class="px-2 py-1 rounded text-xs font-bold">
-                  {{ product.status }}
-                </span>
-              </td>
-              <td class="px-6 py-4 text-right">
-                <div class="flex justify-end gap-2">
-                  <button (click)="openEditModal(product)" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition">
-                    ✏️
-                  </button>
-                  <button (click)="deleteProduct(product.id)" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition">
-                    🗑️
-                  </button>
-                </div>
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-      @if (products.length === 0) {
-        <div class="text-center py-12 text-gray-500">
-          No products found. Start by adding one!
+    <!-- Loading Spinner -->
+    @if (loading) {
+      <div class="fixed inset-0 bg-black/20 flex items-center justify-center z-40">
+        <div class="bg-white p-6 rounded-xl shadow-lg flex items-center gap-4">
+          <div class="w-12 h-12 border-4 border-t-4 border-gray-200 border-t-indigo-600 rounded-full animate-spin"></div>
+          <div class="text-gray-700 font-medium">Loading analytics...</div>
         </div>
-      }
-    </div>
+      </div>
+    }
+
+    <!-- Analytics View -->
+    @if (viewMode === 'analytics') {
+      <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+        <!-- Total Orders -->
+        <div class="rounded-xl shadow p-4 bg-white hover:shadow-lg transform hover:-translate-y-1 transition">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-sm text-gray-500">Total Orders</div>
+              <div class="text-2xl font-bold text-gray-900">{{ stats?.totalOrders ?? 0 }}</div>
+            </div>
+            <div class="text-3xl"></div>
+          </div>
+        </div>
+
+        <!-- Pending Orders -->
+        <div class="rounded-xl shadow p-4 bg-white hover:shadow-lg transform hover:-translate-y-1 transition">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-sm text-gray-500">Pending Orders</div>
+              <div class="text-2xl font-bold text-orange-600">{{ stats?.pendingOrders ?? 0 }}</div>
+            </div>
+            <div class="text-3xl">⏳</div>
+          </div>
+        </div>
+
+        <!-- Confirmed Orders -->
+        <div class="rounded-xl shadow p-4 bg-white hover:shadow-lg transform hover:-translate-y-1 transition">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-sm text-gray-500">Confirmed Orders</div>
+              <div class="text-2xl font-bold text-blue-600">{{ stats?.confirmedOrders ?? 0 }}</div>
+            </div>
+            <div class="text-3xl">✅</div>
+          </div>
+        </div>
+
+        <!-- Delivered Orders -->
+        <div class="rounded-xl shadow p-4 bg-white hover:shadow-lg transform hover:-translate-y-1 transition">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-sm text-gray-500">Delivered Orders</div>
+              <div class="text-2xl font-bold text-green-600">{{ stats?.deliveredOrders ?? 0 }}</div>
+            </div>
+            <div class="text-3xl"></div>
+          </div>
+        </div>
+
+        <!-- Cancelled Orders -->
+        <div class="rounded-xl shadow p-4 bg-white hover:shadow-lg transform hover:-translate-y-1 transition">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-sm text-gray-500">Cancelled Orders</div>
+              <div class="text-2xl font-bold text-red-600">{{ stats?.cancelledOrders ?? 0 }}</div>
+            </div>
+            <div class="text-3xl">❌</div>
+          </div>
+        </div>
+
+        <!-- Total Revenue -->
+        <div class="rounded-xl shadow p-4 bg-white hover:shadow-lg transform hover:-translate-y-1 transition">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-sm text-gray-500">Total Revenue</div>
+              <div class="text-2xl font-bold text-green-700">Rs. {{ stats?.totalRevenue | number }}</div>
+            </div>
+            <div class="text-3xl"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reports -->
+      <!-- Charts -->
+      <app-admin-reports-chart [monthlySales]="monthlySales" [topProducts]="topProducts"></app-admin-reports-chart>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div class="bg-white rounded-xl shadow p-6">
+          <h3 class="text-lg font-semibold mb-4">Monthly Sales Report</h3>
+          @if (monthlySales.length === 0) {
+            <div class="text-gray-500">No sales data available.</div>
+          } @else {
+            <div class="overflow-x-auto">
+              <table class="w-full text-left">
+                <thead class="text-sm text-gray-500 border-b">
+                  <tr>
+                    <th class="py-2">Month</th>
+                    <th class="py-2">Orders</th>
+                    <th class="py-2">Revenue</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (row of monthlySales; track row.month) {
+                    <tr class="border-b hover:bg-gray-50">
+                      <td class="py-3">{{ row.month }}</td>
+                      <td class="py-3">{{ row.totalOrders }}</td>
+                      <td class="py-3">Rs. {{ row.totalRevenue | number }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+
+        <div class="bg-white rounded-xl shadow p-6">
+          <h3 class="text-lg font-semibold mb-4">Top Selling Products</h3>
+          @if (topProducts.length === 0) {
+            <div class="text-gray-500">No product statistics available.</div>
+          } @else {
+            <div class="overflow-x-auto">
+              <table class="w-full text-left">
+                <thead class="text-sm text-gray-500 border-b">
+                  <tr>
+                    <th class="py-2">Rank</th>
+                    <th class="py-2">Product Name</th>
+                    <th class="py-2">Quantity Sold</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (p of topProducts; track p.productId) {
+                    <tr class="border-b hover:bg-gray-50">
+                      <td class="py-3">{{ topProducts.indexOf(p) + 1 }}</td>
+                      <td class="py-3">{{ p.productName }}</td>
+                      <td class="py-3">{{ p.quantitySold }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Product Management View -->
+    @if (viewMode === 'products') {
+      <div class="mt-6">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-xl font-semibold">Product Management</h3>
+          <div class="flex gap-2">
+            <button (click)="openAddModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">+ Add Product</button>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+          <table class="w-full text-left">
+            <thead class="bg-gray-50 border-b border-gray-100">
+              <tr>
+                <th class="px-6 py-4 font-semibold text-gray-700">Product</th>
+                <th class="px-6 py-4 font-semibold text-gray-700">Category</th>
+                <th class="px-6 py-4 font-semibold text-gray-700">Price</th>
+                <th class="px-6 py-4 font-semibold text-gray-700">Stock</th>
+                <th class="px-6 py-4 font-semibold text-gray-700">Status</th>
+                <th class="px-6 py-4 font-semibold text-gray-700 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              @for (product of products; track product.id) {
+                <tr class="hover:bg-gray-50 transition">
+                  <td class="px-6 py-4">
+                    <div class="flex items-center gap-4">
+                      <img [src]="product.imageUrl" alt="{{ product.name }}" class="w-12 h-12 rounded-lg object-cover bg-gray-100">
+                      <div>
+                        <div class="font-bold text-gray-900">{{ product.name }}</div>
+                        <div class="text-xs text-gray-500 truncate max-w-[200px]">{{ product.description }}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4">
+                    <span class="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-semibold">
+                      {{ product.category?.name || 'Uncategorized' }}
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 font-semibold text-gray-900">Rs. {{ product.price.toLocaleString() }}</td>
+                  <td class="px-6 py-4"><span [class]="product.quantity > 0 ? 'text-green-600' : 'text-red-600'" class="font-medium">{{ product.quantity }}</span></td>
+                  <td class="px-6 py-4"><span [class]="product.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'" class="px-2 py-1 rounded text-xs font-bold">{{ product.status }}</span></td>
+                  <td class="px-6 py-4 text-right">
+                    <div class="flex justify-end gap-2">
+                      <button (click)="openEditModal(product)" class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition">✏️</button>
+                      <button (click)="deleteProduct(product.id)" class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition">️</button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          @if (products.length === 0) {
+            <div class="text-center py-12 text-gray-500">No products found. Start by adding one!</div>
+          }
+        </div>
+      </div>
+    }
   </div>
 </div>
 
@@ -92,3 +239,10 @@
   (save)="saveProduct($event)"
   (cancel)="closeModal()">
 </app-product-form>
+
+
+
+
+
+
+
