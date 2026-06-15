@@ -4,13 +4,19 @@ import { FormsModule } from '@angular/forms';
 import { ProductService } from '../products/services/product.service';
 import { Product } from '../../core/models/product.model';
 import { ProductFormComponent } from '../products/product-form/product-form.component';
+import { AdminReportsChartComponent } from './admin-reports-chart.component';
 import { RouterModule } from '@angular/router';
 import Swal from 'sweetalert2';
+import { DashboardService } from '../../core/services/dashboard.service';
+import { DashboardStats } from '../../core/models/dashboard-stats.model';
+import { MonthlySales } from '../../core/models/monthly-sales.model';
+import { TopProduct } from '../../core/models/top-product.model';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, ProductFormComponent],
+  imports: [CommonModule, FormsModule, RouterModule, ProductFormComponent, AdminReportsChartComponent],
   templateUrl: './admin-dashboard.component.html',
   styleUrl: './admin-dashboard.component.css',
 })
@@ -19,14 +25,22 @@ export class AdminDashboardComponent implements OnInit {
   showModal = false;
   isEditing = false;
   currentProduct: Product = this.getEmptyProduct();
+  // Analytics
+  stats: DashboardStats | null = null;
+  monthlySales: MonthlySales[] = [];
+  topProducts: TopProduct[] = [];
+  loading = false;
+  // view mode: analytics (default) or products
+  viewMode: 'analytics' | 'products' = 'analytics';
 
   constructor(
     private readonly productService: ProductService,
+    private readonly dashboardService: DashboardService,
     private readonly cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
-    this.loadProducts();
+    this.loadAnalytics();
   }
 
   loadProducts(): void {
@@ -37,6 +51,41 @@ export class AdminDashboardComponent implements OnInit {
       },
       error: (err) => {
         console.error('Error loading products:', err);
+      },
+    });
+  }
+
+  // Charts data (monthlySales and topProducts) are provided to the chart component below.
+
+  openProductManagement(): void {
+    this.viewMode = 'products';
+    // load products when entering product management view
+    this.loadProducts();
+  }
+
+  loadAnalytics(): void {
+    // switch to analytics view and load data
+    this.viewMode = 'analytics';
+    this.loading = true;
+    this.cdr.detectChanges();
+
+    forkJoin({
+      stats: this.dashboardService.getDashboardStats(),
+      sales: this.dashboardService.getMonthlySales(),
+      top: this.dashboardService.getTopProducts(),
+    }).subscribe({
+      next: ({ stats, sales, top }) => {
+        this.stats = stats;
+        this.monthlySales = sales || [];
+        this.topProducts = top || [];
+        this.loading = false;
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.loading = false;
+        console.error('Error loading analytics:', err);
+        Swal.fire('Error', 'Failed to load analytics. Please try again later.', 'error');
+        this.cdr.detectChanges();
       },
     });
   }
