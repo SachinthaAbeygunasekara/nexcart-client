@@ -10,12 +10,14 @@ import { OrdersComponent } from './features/orders/orders.component';
 import { AdminOrdersComponent } from './features/admin-orders/admin-orders.component';
 import { PaymentSuccessComponent } from './features/payment-success/payment-success.component';
 import { PaymentCancelComponent } from './features/payment-cancel/payment-cancel.component';
+import { CustomerProfileComponent } from './features/customer-profile/customer-profile.component';
 
 export const routes: Routes = [
   { path: 'home', component: HomeComponent },
   { path: 'products/:id', component: ProductDetailComponent },
   { path: 'checkout', component: CheckoutComponent, canActivate: [authGuard] },
   { path: 'orders', component: OrdersComponent, canActivate: [authGuard] },
+  { path: 'customer/profile', component: CustomerProfileComponent, canActivate: [authGuard] },
   { path: 'admin', component: AdminDashboardComponent, canActivate: [adminGuard] },
   { path: 'admin/orders', component: AdminOrdersComponent, canActivate: [adminGuard] },
   { path: 'payment-success', component: PaymentSuccessComponent, canActivate: [authGuard] },
