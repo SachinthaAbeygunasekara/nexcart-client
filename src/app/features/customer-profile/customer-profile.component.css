@@ -1,0 +1,35 @@
+/* Responsive design for smaller screens */
+@media (max-width: 1024px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Loading spinner animation */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Utility for animations */
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Form field styling */
+input:focus,
+textarea:focus {
+  outline: none;
+}
+
+/* Ensure proper text for read-only fields */
+input[readonly],
+input:disabled {
+  background-color: rgb(249, 250, 251);
+  color: rgb(75, 85, 99);
+  cursor: not-allowed;
+}
