@@ -3,9 +3,10 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import Swal from 'sweetalert2';
-import { OrderService } from '../../core/services/order.service';
+import { PaymentService } from '../../core/services/payment.service';
 import { CartService } from '../../core/services/cart.service';
 import { AuthService } from '../../features/auth/services/auth.service';
+import { OrderService } from '../../core/services/order.service';
 import { NavbarComponent } from '../../shared/navbar/navbar.component';
 import { CheckoutRequest } from '../../core/models/order.model';
 
@@ -18,9 +19,10 @@ import { CheckoutRequest } from '../../core/models/order.model';
 })
 export class CheckoutComponent {
   private readonly fb = inject(FormBuilder);
-  private readonly orderService = inject(OrderService);
+  private readonly paymentService = inject(PaymentService);
   private readonly cartService = inject(CartService);
   private readonly authService = inject(AuthService);
+  private readonly orderService = inject(OrderService);
   private readonly router = inject(Router);
 
   checkoutForm: FormGroup;
@@ -44,7 +46,7 @@ export class CheckoutComponent {
     this.username = this.authService.getUsername();
   }
 
-  onSubmit() {
+  async onSubmit() {
     if (this.checkoutForm.invalid) {
       Swal.fire({
         icon: 'error',
@@ -57,30 +59,49 @@ export class CheckoutComponent {
     this.isLoading = true;
     const request: CheckoutRequest = this.checkoutForm.value;
 
+    // First, create the order on the backend
     this.orderService.checkout(request).subscribe({
       next: (order) => {
-        this.isLoading = false;
-        Swal.fire({
-          icon: 'success',
-          title: 'Order Successful!',
-          text: `Order #${order.id} has been placed successfully.`,
-          confirmButtonText: 'View Orders',
-        }).then((result) => {
-          if (result.isConfirmed) {
-            // Clear cart after successful checkout
-            this.cartService.clearCart().subscribe(() => {
-              this.router.navigate(['/orders']);
-            });
-          }
+        // Then request a checkout session for that order (order.id as path variable)
+        this.paymentService.createCheckoutSession(order.id).subscribe({
+          next: (response) => {
+            this.isLoading = false;
+            if (response.checkoutUrl) {
+              // Redirect browser to the checkout URL provided by backend
+              window.location.href = response.checkoutUrl;
+            } else {
+              Swal.fire({
+                icon: 'error',
+                title: 'Payment Error',
+                text: 'Payment service did not return a checkout URL. Please try again later.',
+              });
+            }
+          },
+          error: (err) => {
+            this.isLoading = false;
+            if (err.status === 401) {
+              Swal.fire({ icon: 'warning', title: 'Unauthorized', text: 'Please login to complete payment.' });
+            } else if (err.status === 403) {
+              Swal.fire({ icon: 'error', title: 'Access Denied', text: 'You do not have permission.' });
+            } else if (err.status === 500) {
+              Swal.fire({ icon: 'error', title: 'Server Error', text: 'Payment server error. Please try later.' });
+            } else {
+              Swal.fire({ icon: 'error', title: 'Payment Error', text: err.error?.message || 'Failed to create payment session.' });
+            }
+          },
         });
       },
-      error: (error) => {
+      error: (err) => {
         this.isLoading = false;
-        Swal.fire({
-          icon: 'error',
-          title: 'Checkout Failed',
-          text: error.error?.message || 'An error occurred during checkout',
-        });
+        if (err.status === 401) {
+          Swal.fire({ icon: 'warning', title: 'Unauthorized', text: 'Please login to place an order.' });
+        } else if (err.status === 403) {
+          Swal.fire({ icon: 'error', title: 'Access Denied', text: 'You do not have permission.' });
+        } else if (err.status === 500) {
+          Swal.fire({ icon: 'error', title: 'Server Error', text: 'Order service error. Please try later.' });
+        } else {
+          Swal.fire({ icon: 'error', title: 'Checkout Failed', text: err.error?.message || 'An error occurred while placing the order' });
+        }
       },
     });
   }
