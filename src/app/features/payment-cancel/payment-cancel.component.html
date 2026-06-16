@@ -1,0 +1,50 @@
+<div class="min-h-screen bg-gradient-to-b from-red-50 to-white flex items-center justify-center p-4">
+  <div class="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+    <!-- Cancel Icon -->
+    <div class="mb-6">
+      <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-red-100">
+        <svg class="w-12 h-12 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </div>
+    </div>
+
+    <!-- Cancel Message -->
+    <h1 class="text-3xl font-bold text-gray-800 mb-2">Payment Cancelled</h1>
+    <p class="text-gray-600 mb-6">
+      Your payment was not completed. Your order has been cancelled and no charges were made to your account.
+    </p>
+
+    <!-- Details -->
+    <div class="bg-gray-50 rounded-lg p-4 mb-6 text-left">
+      <p class="text-sm text-gray-600">
+        You can review your cart and try checkout again, or continue browsing our products.
+      </p>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="flex flex-col gap-3">
+      <button
+        (click)="retryCheckout()"
+        class="w-full px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-blue-700 transition shadow-md">
+        Try Again
+      </button>
+      <button
+        (click)="continueShopping()"
+        class="w-full px-6 py-3 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition shadow-md">
+        Continue Shopping
+      </button>
+      <button
+        (click)="goHome()"
+        class="w-full px-6 py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition">
+        Back to Home
+      </button>
+    </div>
+
+    <!-- Additional Info -->
+    <p class="text-xs text-gray-500 mt-6">
+      Having issues? <a href="mailto:support@nexcart.com" class="text-blue-500 hover:underline">Contact our support team</a>
+    </p>
+  </div>
+</div>
+

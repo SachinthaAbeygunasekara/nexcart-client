@@ -1,0 +1,16 @@
+:host {
+  display: block;
+}
+
+button {
+  transition-duration: 200ms;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+a {
+  cursor: pointer;
+}
+
