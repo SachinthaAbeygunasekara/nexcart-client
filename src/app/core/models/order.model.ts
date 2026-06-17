@@ -9,6 +9,9 @@ export interface OrderItem {
   quantity: number;
   price: number;
   subtotal: number;
+  reviewId?: number;
+  rating?: number;
+  comment?: string;
 }
 
 export interface Order {
