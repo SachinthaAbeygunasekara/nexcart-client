@@ -6,25 +6,30 @@
         <p class="text-gray-600">Analytics & management</p>
       </div>
       <div class="flex gap-4">
-        <a routerLink="/home" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition">
-          Back to Home
-        </a>
-        @if (viewMode !== 'products') {
-          <a routerLink="/admin/orders" class="px-6 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition shadow-md">
-            Manage Orders
-          </a>
-        }
-        @if (viewMode === 'analytics') {
-          <button class="px-6 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition shadow-md" (click)="openProductManagement()">
-            Product Management
-          </button>
-        }
-        @if (viewMode === 'products') {
-          <button class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition" (click)="loadAnalytics()">
-            Back to Analytics
-          </button>
-        }
-      </div>
+         <a routerLink="/home" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition">
+           Back to Home
+         </a>
+         @if (viewMode !== 'products') {
+           <a routerLink="/admin/orders" class="px-6 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition shadow-md">
+             Manage Orders
+           </a>
+         }
+         @if (viewMode !== 'products') {
+           <a routerLink="/admin/reviews" class="px-6 py-2 bg-amber-600 text-white rounded-lg font-semibold hover:bg-amber-700 transition shadow-md">
+             Manage Reviews
+           </a>
+         }
+         @if (viewMode === 'analytics') {
+           <button class="px-6 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition shadow-md" (click)="openProductManagement()">
+             Product Management
+           </button>
+         }
+         @if (viewMode === 'products') {
+           <button class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition" (click)="loadAnalytics()">
+             Back to Analytics
+           </button>
+         }
+       </div>
     </div>
 
     <!-- Loading Spinner -->

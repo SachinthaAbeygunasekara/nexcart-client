@@ -3,6 +3,7 @@ import { authGuard } from './core/guards/auth-guard';
 
 import { adminGuard } from './core/guards/admin-guard';
 import { AdminDashboardComponent } from './features/admin-dashboard/admin-dashboard.component';
+import { AdminReviewsComponent } from './features/admin-reviews/admin-reviews.component';
 import { ProductDetailComponent } from './features/products/product-detail/product-detail.component';
 import { HomeComponent } from './features/home/home.component';
 import { CheckoutComponent } from './features/checkout/checkout.component';
@@ -20,6 +21,7 @@ export const routes: Routes = [
   { path: 'customer/profile', component: CustomerProfileComponent, canActivate: [authGuard] },
   { path: 'admin', component: AdminDashboardComponent, canActivate: [adminGuard] },
   { path: 'admin/orders', component: AdminOrdersComponent, canActivate: [adminGuard] },
+  { path: 'admin/reviews', component: AdminReviewsComponent, canActivate: [adminGuard] },
   { path: 'payment-success', component: PaymentSuccessComponent, canActivate: [authGuard] },
   { path: 'payment-cancel', component: PaymentCancelComponent, canActivate: [authGuard] },
   { path: '**', redirectTo: 'home' }

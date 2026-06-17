@@ -9,4 +9,6 @@ export interface Product {
   category?: Category;
   quantity: number;
   status: 'ACTIVE' | 'INACTIVE';
+  averageRating?: number;
+  totalReviews?: number;
 }
