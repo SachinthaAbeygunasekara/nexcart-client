@@ -17,4 +17,14 @@ export class ProductListComponent {
   onAddToCart(product: Product): void {
     this.addToCart.emit(product);
   }
+
+  getRatingStars(rating: number | undefined): number[] {
+    if (!rating) {
+      return [];
+    }
+    const fullStars = Math.floor(rating);
+    return Array(5)
+      .fill(0)
+      .map((_, i) => (i < fullStars ? 1 : 0));
+  }
 }
